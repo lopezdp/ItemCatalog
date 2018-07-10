@@ -16,16 +16,26 @@ A user can view different categories and items to add, edit, or delete items and
 
 ## Issues, Current, & Future Functionality
 [] Users can Add New, Edit, & Delete Items.
+
 [] Users can Add New Menu Items for each category available in the catalog.
+
 [] Users can Edit & Delete Items for each category available in the catalog.
+
 [] Users can view items from a categorical List.
+
 [] Data Driven Application Using SQLite3.
+
 [] Application provides JSON API Endpoints for the following:
-	* showCategories: `/categories/JSON`
-	* showItem: `/categories/category_id/item/item_id/JSON`
+
+* showCategories: `/categories/JSON`
+* showItem: `/categories/category_id/item/item_id/JSON`
+
 [] Need to Style the page using Jinja templates & CSS.
+
 [] Users can login and register using Google+ API.
+
 [] Local Permission System to allow users private access to user content.
+
 [] Users can login and register using Facebook Login API
 
 ## License
