@@ -51,3 +51,16 @@ DBSession = sessionmaker(bind=engine)
 # revert all of them back to the last commit by calling
 # session.rollback()
 session = DBSession()
+
+# Create anti-forgery state token
+#################################
+@app.route('/login')
+def showLogin():
+    state = ''.join(random.choice(string.ascii_uppercase + string.digits)
+        for x in range(32)
+    )
+
+    login_session['state'] = state
+    #return "The current session state is %s" % login_session['state']
+    # RENDER the LOGIN.HTML TEMPLATE
+    return render_template('login.html', STATE=state)
