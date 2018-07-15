@@ -64,3 +64,52 @@ def showLogin():
     #return "The current session state is %s" % login_session['state']
     # RENDER the LOGIN.HTML TEMPLATE
     return render_template('login.html', STATE=state)
+
+
+
+# Building Endpoints/Route Handlers "Local Routing" (GET Request)
+# Root Catalog Directory
+#################################################################
+@app.route('/')
+@app.route('/catalog/')
+def showCatalog():
+    # query db and assign to categories variable
+    categories = session.query(Category).order_by(Category.id.asc()).all()
+
+    # Check if user credential match data in login_session
+    # Check if username data in login_session
+    if 'username' not in login_session:
+        # This page will redirect user to Google login page
+        return render_template('publicCategories.html', categories = categories, title = "Item Categories")
+    else:
+        # return "This page will show all categories"
+        return render_template('categories.html', categories = categories, title = "Item Categories")
+
+# Create a New Category
+#########################
+@app.route('/category/new/', methods = ['GET', 'POST'])
+# Method to create newCategory
+def newCategory():
+    # Check to see if a user is logged in.
+    if 'username' not in login_session:
+        return redirect('/login')
+
+    # If user is logged in then access newCategory page
+    if request.method == 'POST':
+        # Store category input from form into newCategory
+        newCategory = Restaurant(
+            name = request.form['catName'].strip(),
+            description = request.form['catDescription'].strip(),
+            user_id = login_session['user_id']
+        )
+        # add newCategory item to db stage
+        session.add(newCategory)
+        # commit newCategory item to db
+        session.commit()
+
+        # flash message to indicate success
+        flash("New Category: " + newCategory.name + " ==> Created!")
+        # redirect user to updated list of categories
+        return redirect(url_for('newCategory'))
+    else:
+        return render_template('newCategory.html', title = "New Category Input")
