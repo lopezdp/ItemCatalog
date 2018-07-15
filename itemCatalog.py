@@ -13,7 +13,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 # This imports the data model designed in the schema: itemCatalogSchema.py
-from restaurantMenuSchema import Base, Restaurant, MenuItem, User
+from itemCatalogSchema import Base, Category, Item, User
 
 # New Imports for Google Oauth Login functionality
 from flask import session as login_session
@@ -32,12 +32,12 @@ import requests
 # Read & store the client_id from the client_secrets.json file
 #CLIENT_ID = json.loads(
 #    open('client_secrets.json','r').read())['web']['client_id']
-#APPLICATION_NAME = "Restaurant Menu Application"
+#APPLICATION_NAME = "Item Catalog Application"
 
 app = Flask(__name__)
 
 # Create Session and connect to SQLite db
-engine = create_engine('sqlite:///restaurantMenus.db')
+engine = create_engine('sqlite:///itemCatalogSchema.db')
 # Bind the engine to the metadata of the Base class so that the
 # declaratives can be accessed through a DBSession instance
 Base.metadata.bind = engine
@@ -97,9 +97,9 @@ def newCategory():
     # If user is logged in then access newCategory page
     if request.method == 'POST':
         # Store category input from form into newCategory
-        newCategory = Restaurant(
-            name = request.form['catName'].strip(),
-            description = request.form['catDescription'].strip(),
+        newCategory = Category(
+            name = request.form['name'].strip(),
+            description = request.form['description'].strip(),
             user_id = login_session['user_id']
         )
         # add newCategory item to db stage

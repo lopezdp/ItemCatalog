@@ -17,7 +17,7 @@ A user can view different categories and items to add, edit, or delete items and
 ## Issues, Current, & Future Functionality
 [ ] Users can Add New, Edit, & Delete Items.
 
-[ ] Users can Add New Menu Items for each category available in the catalog.
+[ ] Users can Add New Items for each category available in the catalog.
 
 [ ] Users can Edit & Delete Items for each category available in the catalog.
 
