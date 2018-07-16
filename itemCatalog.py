@@ -80,10 +80,10 @@ def showCatalog():
     # Check if username data in login_session
     if 'username' not in login_session:
         # This page will redirect user to Google login page
-        return render_template('publicCategories.html', categories = categories, title = "Item Categories")
+        return render_template('publicCategories.html', category = category, title = "Item Categories")
     else:
         # return "This page will show all categories"
-        return render_template('categories.html', categories = categories, title = "Item Categories")
+        return render_template('categories.html', category = category, title = "Item Categories")
 
 # Create a New Category
 #########################
@@ -113,3 +113,38 @@ def newCategory():
         return redirect(url_for('newCategory'))
     else:
         return render_template('newCategory.html', title = "New Category Input")
+
+# Edit a Category
+#########################
+@app.route('/category/<int:category_id>/edit/', methods = ['GET', 'POST'])
+def editCategory(category_id):
+
+    # query db by category_id and assign to category variable
+    category = session.query(Category).filter_by(id = category_id).one()
+
+    # Check to see if a user is logged in.
+    if 'username' not in login_session:
+        return redirect('/login')
+
+    # Check if user_id matches the user_id stored in login_session
+    if category.user_id != login_session['user_id']:
+        return authorizationAlert("Edit")
+
+    # If user is logged in then access editCategory page
+    if request.method == 'POST':
+        if request.form:
+            # Store edited field data and POST to db
+            category.name = request.form['name'].strip()
+            category.description = request.form['description'].strip()
+        # add editCategory data to db stage
+        session.add(restaurant)
+        # commit editCategory data to db
+        session.commit()
+
+        # flash msg to indicate success
+        flash("Edited Category: " + category.name + " ==> Updated!")
+        # redirect user to updated list of categories in Catalog
+        return redirect(url_for('showCatalog'))
+    else:
+        # Render the html needed to edit the restaurant.
+        return render_template('editCategory.html', title = 'Edit Category', category = category)
