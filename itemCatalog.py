@@ -80,10 +80,10 @@ def showCatalog():
     # Check if username data in login_session
     if 'username' not in login_session:
         # This page will redirect user to Google login page
-        return render_template('publicCategories.html', category = category, title = "Item Categories")
+        return render_template('publicCategories.html', categories = categories, title = "Item Categories")
     else:
         # return "This page will show all categories"
-        return render_template('categories.html', category = category, title = "Item Categories")
+        return render_template('categories.html', categories = categories, title = "Item Categories")
 
 # Create a New Category
 #########################
@@ -109,6 +109,7 @@ def newCategory():
 
         # flash message to indicate success
         flash("New Category: " + newCategory.name + " ==> Created!")
+
         # redirect user to updated list of categories
         return redirect(url_for('newCategory'))
     else:
@@ -143,8 +144,41 @@ def editCategory(category_id):
 
         # flash msg to indicate success
         flash("Edited Category: " + category.name + " ==> Updated!")
+
         # redirect user to updated list of categories in Catalog
         return redirect(url_for('showCatalog'))
     else:
-        # Render the html needed to edit the restaurant.
+        # Render the html needed to edit the category.
         return render_template('editCategory.html', title = 'Edit Category', category = category)
+
+# Delete a Category
+#########################
+@app.route('/category/<int:category>/delete/', methods = ['GET', 'POST'])
+def deleteCategory(category_id):
+
+    # query db by category_id and assign to category variable
+    category = session.query(Category).filter_by(id=category_id).one()
+
+    # Check to see if a user is logged in.
+    if 'username' not in login_session:
+        return redirect('/login')
+
+    # Check if user_id matches the user_id stored in login_session
+    if category.user_id != login_session['user_id']:
+        return authorizationAlert("Delete")
+
+    # If user is logged in then access deleteCategory page
+    if request.method == 'POST':
+        # delete category object obtained from db query
+        session.delete(category)
+        # commit delete to db
+        session.commit()
+
+        # flash msg to indicate success
+        flash("Deleted Category: " + category.name + " ==> Deleted!")
+
+        # redirect user to updated list of categories
+        return redirect(url_for('showCatalog'))
+    else:
+        # Render the html needed to delete the category.
+        return render_template('deleteCategory.html', title = 'Confirm Delete Category', category = category)
