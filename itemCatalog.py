@@ -153,7 +153,7 @@ def editCategory(category_id):
 
 # Delete a Category
 #########################
-@app.route('/category/<int:category>/delete/', methods = ['GET', 'POST'])
+@app.route('/category/<int:category_id>/delete/', methods = ['GET', 'POST'])
 def deleteCategory(category_id):
 
     # query db by category_id and assign to category variable
@@ -182,3 +182,24 @@ def deleteCategory(category_id):
     else:
         # Render the html needed to delete the category.
         return render_template('deleteCategory.html', title = 'Confirm Delete Category', category = category)
+
+# Show Category
+#########################
+@app.route('/category/<int:category_id>/menu/')
+@app.route('/category/<int:category_id>/')
+def showCategory(category_id):
+
+    # query db to find category
+    category = session.query(Category).filter_by(id = category_id).one()
+
+    # getUserInfo()
+    creator = getUserInfo(category.user_id)
+
+    # query db to find items for category
+    items = session.query(Item).filter_by(categoryid = category_id).order_by(Item.id.asc()).all()
+
+    if 'username' not in login_session or creator.id != login_session['user_id']:
+        return render_template('publicCategory.html', items=items, category=category, creator=creator)
+    else:
+        # return "This page are the items for category %s" % category_id
+        return render_template('Category.html', category = category, items = items, creator=creator)
