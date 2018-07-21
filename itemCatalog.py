@@ -222,7 +222,7 @@ def newItem(category_id):
 
     if request.method == 'POST':
         # Store item input from form into newItem
-        newItem = MenuItem(
+        newItem = Item(
             name = request.form['name'].strip(),
             description = request.form['description'].strip(),
             price = request.form['price'].strip(),
@@ -241,3 +241,41 @@ def newItem(category_id):
         return redirect(url_for('showCategory', category_id = category_id))
     else:
         return render_template('newItem.html', title = "New Item Input", category = category)
+
+# Edit Item
+#########################
+@app.route('/category/<int:category_id>/item/<int:item_id>/edit/', methods = ['GET', 'POST'])
+def editItem(category_id, item_id):
+    # Check to see if a user is logged in.
+    if 'username' not in login_session:
+        return redirect('/login')
+
+    # If user is logged in then access editItem page
+    # query db by category_id and item_id and assign to category and item variables
+    category = session.query(Category).filter_by(id = category_id).one()
+    item = session.query(Item).filter_by(id = item_id).one()
+
+    # Check if user_id matches the user_id stored in login_session
+    if category.user_id != login_session['user_id']:
+        return authorizationAlert("Edit")
+
+    if request.method == 'POST':
+        if request.form:
+            # Store edited field data and POST to db
+            item.name = request.form['name'].strip()
+            item.description = request.form['description'].strip()
+            item.price = request.form['price'].strip()
+            #item.categoryid = category_id
+
+        # add editItem data to db stage
+        session.add(item)
+        # commit editItem data to db
+        session.commit()
+
+        # flash msg to indicate success
+        flash("Edit Item: " + item.name + " ==> Updated!")
+        # redirect user to updated list of items
+        return redirect(url_for('showCategory', category_id = category_id))
+    else:
+        category = session.query(Category).filter_by(id = category_id).one()
+        return render_template('editItem.html', title = 'Edit Item', category = category, item = item)
