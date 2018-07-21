@@ -203,3 +203,41 @@ def showCategory(category_id):
     else:
         # return "This page are the items for category %s" % category_id
         return render_template('Category.html', category = category, items = items, creator=creator)
+
+# New Item
+#########################
+@app.route('/category/<int:category_id>/new/', methods = ['GET', 'POST'])
+def newItem(category_id):
+    # Check to see if a user is logged in.
+    if 'username' not in login_session:
+        return redirect('/login')
+
+    # If user is logged in then access newItem page
+    # query db to find Category
+    category = session.query(Category).filter_by(id = category_id).one()
+
+    # Check if user_id matches the user_id stored in login_session
+    if category.user_id != login_session['user_id']:
+        return authorizationAlert("Add")
+
+    if request.method == 'POST':
+        # Store item input from form into newItem
+        newItem = MenuItem(
+            name = request.form['name'].strip(),
+            description = request.form['description'].strip(),
+            price = request.form['price'].strip(),
+            categoryid = category_id,
+            user_id = category.user_id
+        )
+        # add newItem to db stage
+        session.add(newItem)
+        # commit newItem to db
+        session.commit()
+
+        # flash message to indicate success
+        flash("New Item: " + newItem.name + " ==> Created!")
+
+        # redirect user to updated list of Items for chosen category
+        return redirect(url_for('showCategory', category_id = category_id))
+    else:
+        return render_template('newItem.html', title = "New Item Input", category = category)
