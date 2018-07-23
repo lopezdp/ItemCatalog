@@ -138,7 +138,7 @@ def editCategory(category_id):
             category.name = request.form['name'].strip()
             category.description = request.form['description'].strip()
         # add editCategory data to db stage
-        session.add(restaurant)
+        session.add(category)
         # commit editCategory data to db
         session.commit()
 
@@ -279,3 +279,31 @@ def editItem(category_id, item_id):
     else:
         category = session.query(Category).filter_by(id = category_id).one()
         return render_template('editItem.html', title = 'Edit Item', category = category, item = item)
+
+# Delete Item
+#########################
+@app.route('/category/<int:category_id>/item/<int:item_id>/delete/', methods = ['GET', 'POST'])
+def deleteItem(category_id, item_id):
+    # Check to see if a user is logged in.
+    if 'username' not in login_session:
+        return redirect('/login')
+
+    # If user is logged in then access deleteItem page
+    # query db by category_id and item_id and assign to category and item variables
+    category = session.query(Category).filter_by(id=category_id).one()
+    item = session.query(Item).filter_by(id = item_id).one()
+
+    # Check if user_id matches the user_id stored in login_session
+    if category.user_id != login_session['user_id']:
+        return authorizationAlert("Delete")
+
+    if request.method == 'POST':
+        # delete category object obtained from db query
+        session.delete(item)
+        # commit delete to db
+        session.commit()
+        flash("Deleted item: " + item.name + " ==> Deleted!")
+        # redirect user to updated list of category
+        return redirect(url_for('showItem', category_id = category_id))
+    else:
+        return render_template('deleteItem.html', title = 'Confirm Delete Item', category = category, item = item)
