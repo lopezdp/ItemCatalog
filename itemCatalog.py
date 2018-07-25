@@ -166,6 +166,79 @@ def gconnect():
     # Return output
     return output
 
+# FB Connect
+##############################
+@app.route('/fbconnect', methods=['POST'])
+def fbconnect():
+    # Check if user has login['state'] granted
+    # if tokenstate null, then return 401
+    if request.args.get('state') != login_session['state']:
+        response = make_response(json.dumps('Invalid State Parameter.'), 401)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+    # On connect store the access_token
+    access_token = request.data
+
+    # Read json file in dir to obtain API credentials
+    app_id = json.loads(open('fb_client_secrets.json', 'r').read())['web']['app_id']
+    app_secret = json.loads(open('fb_client_secrets.json', 'r').read())['web']['app_secret']
+
+    # Access Endpoint for API
+    url = 'https"//graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=%s&client_secret=%s&fb_exchange_token=%s' % (app_id, app_secret, access_token)
+
+    # Init an Http object and create an http GET request to API URL
+    h = httplib2.Http()
+    result = h.request(url, 'GET')[1]
+
+    # Use the access_token to obtain user_info
+    userinfo_url = 'https://graph.facebook.com/v2.2/me'
+    # strip expire tag from access_token
+    token = result.split('&')[0]
+
+    # Init an Http object and create an http GET request to API URL
+    url = 'https://graph.facebook.com/v2.2/me?access_token=%s&fields=name,id,email' % token
+    h = httplib2.Http()
+    result = h.request(url, 'GET')[1]
+
+    # Capture data from http request
+    data = json.loads(result)
+
+    # Obtain FB User Data
+    login_session['provider'] = 'facebook'
+    login_session['username'] = data['name']
+    login_session['email'] = data['email']
+    login_session['facebook_id'] = data['id']
+
+    # Get User picture
+    url = 'https://graph.facebook.com/v2.2/me/picture?%s&redirect=0&height=200&width=200' % token
+    h = httplib2.Http()
+    result = h.request(url, 'GET')[1]
+
+    # Capture data from http request
+    data = json.loads(result)
+
+    login_session['picture'] = data['data']['url']
+
+    # Check if user exists
+    user_id = getUserId(login_session['email'])
+
+    if not user_id:
+        user_id = createUser(login_session)
+    login_session['user_id'] = user_id
+
+    # Format output
+    output = ''
+    output += '<h1>Welcome, '
+    output += login_session['username']
+    output += '!</h1>'
+    output += '<img src="'
+    output += login_session['picture']
+    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
+    flash("You are now logged in as %s" % login_session['username'])
+    print("Done!")
+
+    # Return output
+    return output
 
 
 # Building Endpoints/Route Handlers "Local Routing" (GET Request)
