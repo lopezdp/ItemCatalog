@@ -65,6 +65,107 @@ def showLogin():
     # RENDER the LOGIN.HTML TEMPLATE
     return render_template('login.html', STATE=state)
 
+# GConnect
+# Route handler to accept client-side calls from signInCallBack()
+#################################################################
+@app.route('/gconnect', methods = ['POST'])
+def gconnect():
+    # Validate state token
+    if request.args.get('state') != login_session['state']:
+        # if state tokens do not match then return 401
+        response = make_response(json.dumps('Invalid state parameter'), 401)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
+    # save request data in code variable
+    code = request.data
+
+    try:
+        #Upgrade the auth code into a credentials object
+        oauth_flow = flow_from_clientsecrets('client_secrets.json', scope = '')
+        oauth_flow.redirect_uri = 'postmessage'
+        # credentials variable holds the request data
+        credentials = oauth_flow.step2_exchange(code)
+
+    except FlowExchangeError:
+        response = make_response(json.dumps('Failed to upgrade the authorization code'), 401)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
+    # Check to be sure the access token is valid
+    access_token = credentials.access_token
+
+    url = ("https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s" % access_token)
+    h = httplib2.Http()
+    result = json.loads(h.request(url, 'GET')[1])
+
+    # Abort if there is an error with the access token
+    if result.get('error') is not None:
+        response = make_response(json.dumps(result.get('error')), 500)
+        response.headers['Content-Type'] = 'application/json'
+        # Debug
+        print("500 error print: " + result)
+        return response
+
+    # Ensure that the access_token is used by the intended person
+    gplus_id = credentials.id_token['sub']
+    if result['user_id'] != gplus_id:
+        response = make_response(json.dumps('Token client ID does not match user ID'), 401)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
+    # Verify that the access token is good for this app.
+    if result['issued_to'] != CLIENT_ID:
+        response = make_response(
+            json.dumps("Token's client ID does not match app's."), 401)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
+    # Check to see if user is already logged in
+    stored_credentials = login_session.get('credentials')
+    stored_gplus_id = login_session.get('gplus_id')
+    if stored_credentials is not None and gplus_id == stored_gplus_id:
+        response = make_response(json.dumps('Current User is already Signed In'), 200)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+
+    # Save the access_token for later use dude
+    login_session['provider'] = 'google'
+    login_session['access_token'] = credentials.access_token
+    login_session['gplus_id'] = gplus_id
+
+    # Get user info
+    userinfo_url = "https://www.googleapis.com/oauth2/v1/userinfo"
+    params = {'access_token': credentials.access_token, 'alt': 'json'}
+    answer = requests.get(userinfo_url, params=params)
+
+    data = answer.json()
+
+    # Store data params into login_session params
+    login_session['username'] = data['name']
+    login_session['picture'] = data['picture']
+    login_session['email'] = data['email']
+
+    # Check for user in db, if not then INSERT
+    user_id = getUserId(login_session['email'])
+    if not user_id:
+        user_id = createUser(login_session)
+    login_session['user_id'] = user_id
+
+    # Format output
+    output = ''
+    output += '<h1>Welcome, '
+    output += login_session['username']
+    output += '!</h1>'
+    output += '<img src="'
+    output += login_session['picture']
+    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
+    flash("You are now logged in as %s" % login_session['username'])
+    print("Done!")
+
+    # Return output
+    return output
+
 
 
 # Building Endpoints/Route Handlers "Local Routing" (GET Request)
@@ -307,3 +408,9 @@ def deleteItem(category_id, item_id):
         return redirect(url_for('showItem', category_id = category_id))
     else:
         return render_template('deleteItem.html', title = 'Confirm Delete Item', category = category, item = item)
+
+
+if __name__ == '__main__':
+    app.secret_key = 'super_secret_key'
+    app.debug = True
+    app.run(host = '0.0.0.0', port = 5000)
