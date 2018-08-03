@@ -240,6 +240,28 @@ def fbconnect():
     # Return output
     return output
 
+# Abstract DisConnect
+##############################
+@app.route('/disconnect')
+def disconnect():
+    if 'provider' in login_session:
+        if login_session['provider'] == 'google':
+            gdisconnect()
+            del login_session['access_token']
+            del login_session['gplus_id']
+        if login_session['provider'] == 'facebook':
+            fbdisconnect()
+            del login_session['facebook_id']
+        del login_session['username']
+        del login_session['email']
+        del login_session['picture']
+        del login_session['user_id']
+        del login_session['provider']
+        flash("You've been Logged out!")
+        return redirect(url_for('showRestaurants'))
+    else:
+        flash("You've were never logged in!")
+        return redirect(url_for('showRestaurants'))
 
 # Building Endpoints/Route Handlers "Local Routing" (GET Request)
 # Root Catalog Directory
