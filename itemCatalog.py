@@ -504,6 +504,25 @@ def deleteItem(category_id, item_id):
     else:
         return render_template('deleteItem.html', title = 'Confirm Delete Item', category = category, item = item)
 
+# EXPOSE API Endpoints in JSON
+#/catalog/JSON
+##############################
+@app.route('/catalog/JSON')
+def showCatalogJSON():
+    # query db for all Categories to jsonify
+    categories = session.query(Category).all()
+    # create json object of list of all Categories
+    json = jsonify(categories=[category.serialize for category in categories])
+    # create a response object using flask make_response(responseObj, status)
+    res = make_response(json, 200)
+    # Change value of 'Content-Type' header as required
+    res.headers['Content-Type'] = 'application/json'
+    # return the response
+    return res
+
+
+
+
 
 if __name__ == '__main__':
     app.secret_key = 'super_secret_key'
