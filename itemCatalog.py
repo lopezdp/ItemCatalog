@@ -381,7 +381,7 @@ def deleteCategory(category_id):
 
 # Show Category
 #########################
-@app.route('/category/<int:category_id>/menu/')
+@app.route('/category/<int:category_id>/item/')
 @app.route('/category/<int:category_id>/')
 def showCategory(category_id):
 
@@ -520,7 +520,19 @@ def showCatalogJSON():
     # return the response
     return res
 
-
+#/category/category_id/item/JSON
+@app.route('/category/<int:category_id>/item/JSON')
+def showCategoryJSON(category_id):
+    # query db for all items to jsonify
+    items = session.query(Item).filter_by(categoryid=category_id)
+    # create json object of list of all items for this category
+    json = jsonify(Items=[item.serialize for item in items])
+    # create a response object using flask make_response(responseObj, status)
+    res = make_response(json, 200)
+    # Change value of 'Content-Type' header as required
+    res.headers['Content-Type'] = 'application/json'
+    # return the response
+    return res
 
 
 
